@@ -229,4 +229,3 @@ if __name__ == "__main__":
     for method_name, method_func in methods.items():
         results = method_func()
         print_results(method_name, results)
-        
