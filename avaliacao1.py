@@ -17,10 +17,12 @@ def eval_func(func_str: str, x: Optional[float] = None) -> tuple[float, list[flo
     var = symbols("x")
     roots = solve(Eq(sympify(func_str), 0), var)
     roots_list = roots if isinstance((roots), list) else [roots]
-    roots_list = [root.evalf() if isinstance(root, Mul | Pow) else root for root in roots_list]
+    roots_list = [
+        root.evalf() if isinstance(root, Mul | Pow) else root for root in roots_list
+    ]
     func_value = eval(func_str.replace("x", str(x))) if x is not None else -1
 
-    return func_value, roots_list # type: ignore
+    return func_value, roots_list  # type: ignore
 
 
 def eval_func_derivative(func_str: str, x: float, h: float = 1e-5):
@@ -45,7 +47,9 @@ def eval_func_derivative(func_str: str, x: float, h: float = 1e-5):
     var = symbols("x")
     roots = solve(Eq(diff(sympify(func_str)), 0), var)
     roots_list = roots if isinstance((roots), list) else [roots]
-    roots_list = [root.evalf() if isinstance(root, Mul | Pow) else root for root in roots_list]
+    roots_list = [
+        root.evalf() if isinstance(root, Mul | Pow) else root for root in roots_list
+    ]
 
     return func_value, roots_list
 
@@ -68,7 +72,6 @@ def bisection_method(
     f_func_str: str,
     lower_bound: float,
     upper_bound: float,
-    tolerance: float,
     max_iterations: int,
 ) -> tuple[float, int, str]:
     """
@@ -92,11 +95,14 @@ def bisection_method(
 
     for i in range(1, max_iterations + 1):
         current_bisection = (current_lower + current_upper) / 2
-        func_value = eval_func(f_func_str, current_bisection)[0]
+        f_of_bisection = eval_func(f_func_str, current_bisection)[0]
+        f_of_lower = eval_func(f_func_str, current_lower)[0]
 
-        if abs(func_value) < tolerance:
+        if f_of_bisection == 0:
             return current_bisection, i, "Exact root found"
-        elif eval_func(f_func_str, current_lower)[0] * func_value < 0:
+        if f_of_lower == 0:
+            return current_lower, i, "Exact root found"
+        elif f_of_lower * f_of_bisection < 0:
             current_upper = current_bisection
         else:
             current_lower = current_bisection
@@ -193,8 +199,6 @@ def get_input(prompt: str, default_value: Any, value_type: type) -> Any:
 
     while True:
         user_input = input(prompt).strip()
-        if user_input == "":
-            return default_value
         try:
             return value_type(user_input)
         except ValueError:
@@ -223,7 +227,7 @@ def get_user_input(
 
     input_prompts = {
         "f_func_str": [
-            "Enter the function f(x) in terms of x (e.g., x**2 - 4) or press 'Enter' to use patterns: ",
+            "Enter the function f(x) in terms of x (e.g., x**2 - 3) or press 'Enter' to use patterns: ",
             patterns["f_func_str"],
             str,
         ],
@@ -260,14 +264,10 @@ def get_user_input(
     }
 
     for key, value in input_prompts.items():
-        input_prompts[key] = get_input(*value)
-
-        if input_prompts[key] == value[1]:
-            input_prompts = {
-                k: (v[1] if i > 0 else v)
-                for i, (k, v) in enumerate(input_prompts.items())
-            }
-            break
+        user_input = get_input(*value)
+        if user_input == "":
+            return {k: v[1] for k, v in input_prompts.items()}
+        input_prompts[key] = user_input
 
     return input_prompts
 
@@ -284,17 +284,24 @@ def print_results(
     Parameters:
         method_name (str): The name of the method.
         func_str (str): The function as a string, where 'x' is used as the variable.
-        true_roots (float): The true value of the root for error calculation.
+        true_roots (list): The true values of the roots for error calculation.
         results (tuple): The results to be printed.
     """
 
     root, iterations, stop_reason = results
-    magnitude_err = abs(root - abs(true_roots[0]))
-    rel_err = relative_error(root, abs(true_roots[0]))
+
+    if not true_roots:
+        magnitude_err = -1
+        rel_err = -1
+        stop_reason = "This function doesn`t have roots."
+    else:
+        magnitude_err = abs(root - abs(true_roots[0]))
+        rel_err = relative_error(root, abs(true_roots[0]))
+
     print(f"\n{method_name} Results:")
     print(f"Function: {func_str}")
     print(f"Root reached: {root}")
-    print(f"True root: {true_roots}")
+    print(f"True root: {true_roots or 'N/A'}")
     print(f"Magnitude of Error: {magnitude_err}")
     print(f"Relative Error: {rel_err:.6f}")
     print(f"Iterations: {iterations}")
@@ -329,7 +336,6 @@ if __name__ == "__main__":
             specs["f_func_str"],
             specs["lower_bound"],
             specs["upper_bound"],
-            specs["tolerance"],
             specs["max_iterations"],
         ),
         "Fixed Point Method": lambda: fixed_point_method(
