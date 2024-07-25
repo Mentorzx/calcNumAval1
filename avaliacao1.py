@@ -1,4 +1,4 @@
-from sympy import symbols, solve, diff
+from sympy import symbols, solve, diff, Eq, sympify, Mul, Pow
 from typing import Any, Optional
 
 
@@ -15,11 +15,12 @@ def eval_func(func_str: str, x: Optional[float] = None) -> tuple[float, list[flo
     """
 
     var = symbols("x")
-    roots = solve(eval(func_str), var)
-    roots_list = roots if roots is isinstance((roots), list) else [roots]
-    func_value = eval(func_str.replace("x", str(x)))
+    roots = solve(Eq(sympify(func_str), 0), var)
+    roots_list = roots if isinstance((roots), list) else [roots]
+    roots_list = [root.evalf() if isinstance(root, Mul | Pow) else root for root in roots_list]
+    func_value = eval(func_str.replace("x", str(x))) if x is not None else -1
 
-    return func_value, roots_list
+    return func_value, roots_list # type: ignore
 
 
 def eval_func_derivative(func_str: str, x: float, h: float = 1e-5):
@@ -42,8 +43,9 @@ def eval_func_derivative(func_str: str, x: float, h: float = 1e-5):
     f_x_minus_h = eval_func(func_str, x - h)[0]
     func_value = (f_x_plus_h - f_x_minus_h) / (2 * h)
     var = symbols("x")
-    roots = solve(diff(eval(func_str)), var)
-    roots_list = roots if roots is isinstance((roots), list) else [roots]
+    roots = solve(Eq(diff(sympify(func_str)), 0), var)
+    roots_list = roots if isinstance((roots), list) else [roots]
+    roots_list = [root.evalf() if isinstance(root, Mul | Pow) else root for root in roots_list]
 
     return func_value, roots_list
 
@@ -287,8 +289,8 @@ def print_results(
     """
 
     root, iterations, stop_reason = results
-    magnitude_err = abs(root - true_roots[0])
-    rel_err = relative_error(root, true_roots[0])
+    magnitude_err = abs(root - abs(true_roots[0]))
+    rel_err = relative_error(root, abs(true_roots[0]))
     print(f"\n{method_name} Results:")
     print(f"Function: {func_str}")
     print(f"Root reached: {root}")
