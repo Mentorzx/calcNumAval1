@@ -1,6 +1,6 @@
 from sympy import symbols, solve, diff, Eq, sympify, Mul, Pow
 from typing import Any, Optional
-from math import ceil, log2
+from math import ceil, log2, sqrt
 
 
 def eval_func(func_str: str, x: Optional[float] = None) -> tuple[float, list[float]]:
@@ -21,7 +21,11 @@ def eval_func(func_str: str, x: Optional[float] = None) -> tuple[float, list[flo
     roots_list = [
         root.evalf() if isinstance(root, Mul | Pow) else root for root in roots_list
     ]
-    func_value = eval(func_str.replace("x", str(x))) if x is not None else -1
+    func_value = (
+        eval(func_str.replace("x", str(1)), {"__builtins__": None}, {"sqrt": sqrt})
+        if x is not None
+        else -1
+    )
 
     return func_value, roots_list  # type: ignore
 
@@ -267,7 +271,7 @@ def get_user_input(
             float,
         ],
         "max_iterations": [
-            "Enter the maximum number of iterations for the Fixed Point and Newton-Raphson Methods: ",
+            "Enter the maximum number of iterations of Methods: ",
             patterns["max_iterations"],
             int,
         ],
@@ -347,6 +351,7 @@ if __name__ == "__main__":
         "initial_guess": 3.0,
         "max_iterations": 5,
     }
+    print("Warning: This code does not handle all possible input errors. Please ensure that your inputs are valid to avoid potential issues such as calculating the square root of a negative number, division by zero, or other out-of-scope errors. Input validation is the user's responsibility.")
     specs = get_user_input(specs_patterns)
     methods = {
         "Bisection Method": lambda: bisection_method(
