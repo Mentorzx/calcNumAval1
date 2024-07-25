@@ -34,7 +34,21 @@ def eval_func_derivative(x, func_str, h=1e-5):
     return (f_x_plus_h - f_x_minus_h) / (2 * h)
 
 
-def bisection_method(lower_bound, upper_bound, tolerance, f_func_str):
+def relative_error(approx_value, true_value):
+    """
+    Calculate the relative error between an approximate value and the true value.
+
+    Parameters:
+    approx_value (float): The approximate value.
+    true_value (float): The true value.
+
+    Returns:
+    float: The relative error.
+    """
+    return abs((approx_value - true_value) / true_value)
+
+
+def bisection_method(lower_bound, upper_bound, tolerance, max_iterations, f_func_str):
     """
     Find a root of the function using the Bisection Method.
 
@@ -42,6 +56,7 @@ def bisection_method(lower_bound, upper_bound, tolerance, f_func_str):
     lower_bound (float): The lower bound of the interval where the root is to be found.
     upper_bound (float): The upper bound of the interval where the root is to be found.
     tolerance (float): The stopping criterion for the root-finding process.
+    max_iterations (int): The maximum number of iterations.
     f_func_str (str): The function f(x) as a string, where 'x' is used as the variable.
 
     Returns:
@@ -52,7 +67,6 @@ def bisection_method(lower_bound, upper_bound, tolerance, f_func_str):
     """
     current_lower = lower_bound
     current_upper = upper_bound
-    max_iterations = math.ceil(math.log2(abs(upper_bound - lower_bound) / tolerance))
 
     for i in range(1, max_iterations + 1):
         current_bisection = (current_lower + current_upper) / 2
@@ -225,20 +239,29 @@ def get_user_input(patterns):
     return input_prompts
 
 
-def print_results(method_name, func_str, results):
+def print_results(method_name, func_str, results, true_value=None):
     """
-    Print the results of the method.
+    Print the results of the method including magnitude of error and relative error if true_value is provided.
 
     Parameters:
     method_name (str): The name of the method.
     func_str (str): The function as a string, where 'x' is used as the variable.
     results (tuple): The results to be printed.
+    true_value (float, optional): The true value of the root for error calculation.
     """
+
+    root, iterations, stop_reason = results
     print(f"\n{method_name} Results:")
     print(f"Function: {func_str}")
-    print(f"Root: {results[0]}")
-    print(f"Iterations: {results[1]}")
-    print(f"Stop Reason: {results[2]}")
+    print(f"Root: {root}")
+    print(f"Iterations: {iterations}")
+    print(f"Stop Reason: {stop_reason}")
+
+    if true_value:
+        magnitude_err = abs(root - true_value)
+        rel_err = relative_error(root, true_value)
+        print(f"Magnitude of Error: {magnitude_err}")
+        print(f"Relative Error: {rel_err:.6f}")
 
 
 if __name__ == "__main__":
@@ -255,20 +278,25 @@ if __name__ == "__main__":
     """
 
     specs_patterns = {
-        "f_func_str": "x**2 - 4",
+        "f_func_str": "x**2 - 3",
         "g_func_str": "x/2 + 1",
-        "lower_bound": 0,
-        "upper_bound": 3,
+        "lower_bound": 1,
+        "upper_bound": 2,
         "tolerance": 0.01,
         "initial_guess": 3.0,
-        "max_iterations": 10,
+        "max_iterations": 5,
     }
     specs = get_user_input(specs_patterns)
+
+    true_root = None  # need improvement
+    # true_root = math.sqrt(3)
+
     methods = {
         "Bisection Method": lambda: bisection_method(
             specs["lower_bound"],
             specs["upper_bound"],
             specs["tolerance"],
+            specs["max_iterations"],
             specs["f_func_str"],
         ),
         "Fixed Point Method": lambda: fixed_point_method(
@@ -293,4 +321,4 @@ if __name__ == "__main__":
             else specs["g_func_str"]
         )
         results = method_func()
-        print_results(method_name, func_str, results)
+        print_results(method_name, func_str, results, true_root)
