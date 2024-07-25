@@ -1,5 +1,6 @@
 from sympy import symbols, solve, diff, Eq, sympify, Mul, Pow
 from typing import Any, Optional
+from math import ceil, log2
 
 
 def eval_func(func_str: str, x: Optional[float] = None) -> tuple[float, list[float]]:
@@ -72,6 +73,7 @@ def bisection_method(
     f_func_str: str,
     lower_bound: float,
     upper_bound: float,
+    tolerance: float,
     max_iterations: int,
 ) -> tuple[float, int, str]:
     """
@@ -93,6 +95,14 @@ def bisection_method(
     current_lower = lower_bound
     current_upper = upper_bound
 
+    bisection_iterations = ceil(log2(abs(upper_bound - lower_bound) / tolerance))
+
+    if bisection_iterations < max_iterations:
+        max_iterations = bisection_iterations
+        stop_reason = "Tolerance reached"
+    else:
+        stop_reason = "Maximum iterations reached"
+
     for i in range(1, max_iterations + 1):
         current_bisection = (current_lower + current_upper) / 2
         f_of_bisection = eval_func(f_func_str, current_bisection)[0]
@@ -107,7 +117,7 @@ def bisection_method(
         else:
             current_lower = current_bisection
 
-    return current_bisection, i, "Maximum iterations reached"
+    return current_bisection, i, stop_reason
 
 
 def fixed_point_method(
@@ -293,15 +303,22 @@ def print_results(
     if not true_roots:
         magnitude_err = -1
         rel_err = -1
-        stop_reason = "This function doesn`t have roots."
+        stop_reason = "This function doesn’t have roots."
     else:
-        magnitude_err = abs(root - abs(true_roots[0]))
-        rel_err = relative_error(root, abs(true_roots[0]))
+        if len(true_roots) == 1:
+            true_root = true_roots[0]
+        elif root >= 0:
+            true_root = next((r for r in true_roots if r >= 0), None)
+        else:
+            true_root = next((r for r in true_roots if r < 0), None)
+
+        magnitude_err = abs(root - true_root)  # type: ignore
+        rel_err = relative_error(root, true_root)  # type: ignore
 
     print(f"\n{method_name} Results:")
     print(f"Function: {func_str}")
     print(f"Root reached: {root}")
-    print(f"True root: {true_roots or 'N/A'}")
+    print(f"True root: {true_root if true_roots else 'N/A'}")
     print(f"Magnitude of Error: {magnitude_err}")
     print(f"Relative Error: {rel_err:.6f}")
     print(f"Iterations: {iterations}")
@@ -336,6 +353,7 @@ if __name__ == "__main__":
             specs["f_func_str"],
             specs["lower_bound"],
             specs["upper_bound"],
+            specs["tolerance"],
             specs["max_iterations"],
         ),
         "Fixed Point Method": lambda: fixed_point_method(
