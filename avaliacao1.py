@@ -45,20 +45,6 @@ def eval_func_derivative(func_str: str, x: float, h: float = 1e-5) -> float:
     return (f_x_plus_h - f_x_minus_h) / (2 * h)
 
 
-def relative_error(approx_value: float, true_value: float) -> float:
-    """
-    Calculate the relative error between an approximate value and the true value.
-
-    Parameters:
-        approx_value (float): The approximate value.
-        true_value (float): The true value.
-
-    Returns:
-        float: The relative error.
-    """
-    return abs((approx_value - true_value) / true_value)
-
-
 def calculate_errors(current_value: float, previous_value: float | None) -> list[float]:
     """
     Calculate the absolute and relative errors.
