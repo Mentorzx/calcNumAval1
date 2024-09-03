@@ -1,4 +1,6 @@
 from typing import Callable, Any, Dict
+import numpy as np
+import matplotlib.pyplot as plt
 
 
 def trapezoidal_rule(f: Callable[[float], float], a: float, b: float, n: int) -> float:
@@ -141,23 +143,69 @@ def execute_methods(f: Callable[[float], float], a: float, b: float, n: int) -> 
         print(f"{method_name} Result: {result}")
 
 
-if __name__ == "__main__":
+def plot_integration_methods(
+    f: Callable[[float], float], a: float, b: float, n: int
+) -> None:
     """
-    Main function that drives the numerical integration script.
+    Plots the results of numerical integration methods alongside the function being integrated.
 
-    It performs the following steps:
-    1. Defines default values for the function, lower bound, upper bound, and the number of intervals.
-    2. Prompts the user to input values for the function, bounds, and intervals using `get_user_inputs`.
-    3. Sets up two numerical integration methods (Trapezoidal Rule and Simpson's 1/3 Rule) with the provided specifications.
-    4. Executes each method and prints the results of the integration.
-    5. If an error occurs during execution, it prints an error message and prompts the user to correct the inputs before retrying.
+    Parameters:
+    - f: function to integrate
+    - a: lower bound of the integration
+    - b: upper bound of the integration
+    - n: number of intervals
     """
+    x = np.linspace(a, b, 1000)
+    y = [f(val) for val in x]
+
+    # Calculate integration results
+    trapezoidal_result = trapezoidal_rule(f, a, b, n)
+    simpsons_result = simpsons_one_third_rule(f, a, b, n)
+
+    # Plot the function
+    plt.plot(x, y, label="f(x)", color="black")
+
+    # Trapezoidal Rule
+    x_trapezoid = np.linspace(a, b, n + 1)
+    y_trapezoid = [f(val) for val in x_trapezoid]
+    plt.fill_between(
+        x_trapezoid,
+        y_trapezoid,
+        step="post",
+        alpha=0.4,
+        color="blue",
+        label=f"Trapezoidal Rule: {trapezoidal_result:.4f}",
+    )
+
+    # Simpson's 1/3 Rule
+    x_simpson = np.linspace(a, b, n + 1)
+    y_simpson = [f(val) for val in x_simpson]
+    plt.fill_between(
+        x_simpson,
+        y_simpson,
+        step="mid",
+        alpha=0.4,
+        color="green",
+        label=f"Simpson's 1/3 Rule: {simpsons_result:.4f}",
+    )
+
+    # Labels and legend
+    plt.title("Numerical Integration Methods")
+    plt.xlabel("x")
+    plt.ylabel("f(x)")
+    plt.legend()
+
+    plt.show()
+
+
+if __name__ == "__main__":
     default_values = {"f": "x**2", "a": 0.0, "b": 1.0, "n": 10}
     done = False
     while not done:
         try:
             user_inputs = get_user_input(default_values)
             execute_methods(**user_inputs)
+            plot_integration_methods(**user_inputs)
             done = True
         except ValueError as e:
             print(f"Error: {e}")
